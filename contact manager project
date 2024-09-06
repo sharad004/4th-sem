@@ -1,0 +1,108 @@
+
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.Scanner;
+
+class Contact {
+    private String name;
+    private String email;
+    private String address;
+    private String phone;
+
+    public Contact(String name, String email, String address, String phone) {
+        this.name = name;
+        this.email = email;
+        this.address = address;
+        this.phone = phone;
+    }
+
+    // Getters and setters (as needed)
+
+    @Override
+    public String toString() {
+        return "Name: " + name + ", Email: " + email + ", Address: " + address + ", Phone: " + phone;
+    }
+}
+
+public class ContactManager {
+    private static final String DB_URL = "jdbc:mysql://localhost:3306/contacts_db";
+    private static final String DB_USER = "your_username";
+    private static final String DB_PASS = "your_password";
+
+    public static void main(String[] args) {
+        try {
+            Connection conn = DriverManager.getConnection(DB_URL, DB_USER, DB_PASS);
+            System.out.println("Connected to the database.");
+
+            Scanner scanner = new Scanner(System.in);
+            int choice;
+
+            do {
+                System.out.println("\nContact Management System");
+                System.out.println("1. Add Contact");
+                System.out.println("2. List Contacts");
+                System.out.println("3. Exit");
+                System.out.print("Enter your choice: ");
+                choice = scanner.nextInt();
+                scanner.nextLine(); // Consume newline
+
+                switch (choice) {
+                    case 1:
+                        addContact(conn, scanner);
+                        break;
+                    case 2:
+                        listContacts(conn);
+                        break;
+                    case 3:
+                        System.out.println("Exiting. Goodbye!");
+                        break;
+                    default:
+                        System.out.println("Invalid choice. Please try again.");
+                }
+            } while (choice != 3);
+
+            conn.close();
+            scanner.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static void addContact(Connection conn, Scanner scanner) throws SQLException {
+        System.out.print("Enter name: ");
+        String name = scanner.nextLine();
+        System.out.print("Enter email: ");
+        String email = scanner.nextLine();
+        System.out.print("Enter address: ");
+        String address = scanner.nextLine();
+        System.out.print("Enter phone: ");
+        String phone = scanner.nextLine();
+
+        String sql = "INSERT INTO contacts (name, email, address, phone) VALUES (?, ?, ?, ?)";
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, name);
+            stmt.setString(2, email);
+            stmt.setString(3, address);
+            stmt.setString(4, phone);
+            stmt.executeUpdate();
+            System.out.println("Contact added successfully!");
+        }
+    }
+
+    private static void listContacts(Connection conn) throws SQLException {
+        String sql = "SELECT * FROM contacts";
+        try (PreparedStatement stmt = conn.prepareStatement(sql);
+             ResultSet rs = stmt.executeQuery()) {
+            while (rs.next()) {
+                String name = rs.getString("name");
+                String email = rs.getString("email");
+                String address = rs.getString("address");
+                String phone = rs.getString("phone");
+                System.out.println(new Contact(name, email, address, phone));
+            }
+        }
+    }
+}
